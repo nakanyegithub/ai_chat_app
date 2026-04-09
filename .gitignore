@@ -1,0 +1,58 @@
+# Виртуальное окружение
+venv/
+env/
+ENV/
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Файлы БД
+*.db
+*.sqlite
+*.sqlite3
+chat_history.db
+
+# Логи
+*.log
+*.pid
+
+# Конфиги с секретами
+.env
+config.local.py
+
+# Редакторы
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Тесты
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Миграции
+alembic/versions/*.py
+!alembic/versions/.gitkeep
+
+# Бэкапы
+*.bak
+*.backup
+*.sql
+
+# Загрузки
+downloads/
+temp/
+tmp/
+
+# Питон
+*.egg-info/
+dist/
+build/
