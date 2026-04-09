@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat - {{ username }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #1a1a2e; height: 100vh; overflow: hidden; }
+        .app { display: flex; height: 100vh; }
+        .sidebar { width: 280px; background: #0f0f1a; display: flex; flex-direction: column; border-right: 1px solid #2a2a3e; }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid #2a2a3e; }
+        .new-chat-btn { width: 100%; padding: 12px; background: #667eea; color: white; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .new-chat-btn:hover { background: #5a67d8; }
+        .chats-history { flex: 1; overflow-y: auto; padding: 16px; }
+        .history-label { font-size: 12px; text-transform: uppercase; color: #666; margin-bottom: 12px; letter-spacing: 1px; }
+        .chats-list { display: flex; flex-direction: column; gap: 8px; }
+        .chat-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 10px; cursor: pointer; background: #1a1a2e; }
+        .chat-item:hover { background: #2a2a3e; }
+        .chat-item.active { background: #2a2a3e; }
+        .chat-item i { color: #667eea; }
+        .chat-details { flex: 1; overflow: hidden; }
+        .chat-name { color: white; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chat-date { color: #666; font-size: 11px; margin-top: 4px; }
+        .chat-actions { display: none; gap: 8px; }
+        .chat-item:hover .chat-actions { display: flex; }
+        .chat-edit, .chat-delete { background: none; border: none; color: #888; cursor: pointer; padding: 4px; }
+        .chat-edit:hover { color: #667eea; }
+        .chat-delete:hover { color: #e53e3e; }
+        .sidebar-footer { padding: 20px; border-top: 1px solid #2a2a3e; }
+        .user-section { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+        .user-avatar { width: 40px; height: 40px; background: #667eea; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .user-avatar i { color: white; }
+        .user-info { flex: 1; }
+        .user-name { color: white; font-size: 14px; font-weight: 600; }
+        .admin-link { background: none; border: 1px solid #667eea; color: #667eea; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 8px; }
+        .admin-link:hover { background: #667eea; color: white; }
+        .logout-link { background: none; border: none; color: #888; font-size: 12px; cursor: pointer; margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+        .logout-link:hover { color: #e53e3e; }
+        .main { flex: 1; display: flex; flex-direction: column; background: #1a1a2e; }
+        .chat-header { padding: 16px 24px; background: #0f0f1a; border-bottom: 1px solid #2a2a3e; display: flex; align-items: center; justify-content: space-between; }
+        .mobile-menu-btn { display: none; background: none; border: none; color: white; font-size: 20px; cursor: pointer; }
+        .chat-title { color: white; font-size: 18px; font-weight: 600; }
+        .header-actions { display: flex; align-items: center; gap: 16px; }
+        .model-dropdown { position: relative; }
+        .model-btn { background: #2a2a3e; border: none; padding: 8px 16px; border-radius: 20px; color: white; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .model-btn:hover { background: #3a3a4e; }
+        .model-menu { position: absolute; top: 100%; right: 0; margin-top: 8px; background: #2a2a3e; border-radius: 12px; overflow: hidden; min-width: 180px; display: none; z-index: 100; }
+        .model-menu.show { display: block; }
+        .model-item { padding: 10px 16px; color: white; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .model-item:hover { background: #3a3a4e; }
+        .model-item.selected { background: #667eea; }
+        .settings-icon-btn { background: none; border: none; color: white; font-size: 18px; cursor: pointer; }
+        .messages-container { flex: 1; overflow-y: auto; padding: 24px; position: relative; }
+        .welcome-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; }
+        .welcome-icon { width: 80px; height: 80px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 24px; }
+        .welcome-icon i { font-size: 40px; color: white; }
+        .welcome-screen h2 { color: white; font-size: 28px; margin-bottom: 12px; }
+        .welcome-screen p { color: #888; font-size: 16px; margin-bottom: 32px; }
+        .example-questions { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; max-width: 600px; }
+        .example-card { background: #2a2a3e; padding: 16px; border-radius: 12px; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 12px; }
+        .example-card:hover { background: #3a3a4e; transform: translateY(-2px); }
+        .example-card i { font-size: 20px; color: #667eea; }
+        .example-card span { color: white; font-size: 14px; }
+        .messages-list { display: flex; flex-direction: column; gap: 20px; }
+        .message { display: flex; gap: 12px; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .message-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .user-avatar { background: #667eea; }
+        .ai-avatar { background: #2a2a3e; }
+        .message-avatar i { font-size: 16px; color: white; }
+        .message-body { flex: 1; }
+        .message-text { background: #2a2a3e; padding: 12px 16px; border-radius: 12px; color: #e0e0e0; font-size: 14px; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; }
+        .message.user .message-text { background: #667eea; color: white; }
+        .message-model { font-size: 10px; color: #888; margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+        .message-time { font-size: 10px; color: #555; margin-top: 4px; }
+        .cursor-blink { display: inline-block; width: 2px; height: 16px; background: #667eea; margin-left: 2px; animation: blink 1s infinite; vertical-align: middle; }
+        @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+        .input-area { padding: 20px 24px; background: #0f0f1a; border-top: 1px solid #2a2a3e; }
+        .input-wrapper { display: flex; gap: 12px; background: #2a2a3e; border-radius: 24px; padding: 8px 16px; }
+        .input-wrapper textarea { flex: 1; background: none; border: none; color: white; font-size: 14px; font-family: inherit; resize: none; outline: none; max-height: 150px; }
+        .input-wrapper textarea::placeholder { color: #666; }
+        .send-button { background: #667eea; border: none; width: 36px; height: 36px; border-radius: 50%; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.3s; }
+        .send-button:hover { background: #5a67d8; }
+        .send-button:disabled { background: #2a2a3e; cursor: not-allowed; }
+        .stop-button { background: #e53e3e; border: none; width: 36px; height: 36px; border-radius: 50%; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.3s; }
+        .stop-button:hover { background: #c53030; }
+        .input-note { font-size: 11px; color: #555; text-align: center; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 4px; }
+        .empty-chats { text-align: center; padding: 40px 20px; color: #666; }
+        .empty-chats i { font-size: 32px; margin-bottom: 12px; display: block; }
+        .scroll-to-bottom-btn { position: absolute; bottom: 20px; right: 20px; background: #667eea; border: none; width: 40px; height: 40px; border-radius: 50%; color: white; cursor: pointer; display: none; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3); z-index: 100; transition: background 0.3s; }
+        .scroll-to-bottom-btn:hover { background: #5a67d8; }
+        .scroll-to-bottom-btn.show { display: flex; }
+        @media (max-width: 768px) { .sidebar { position: fixed; left: -280px; top: 0; bottom: 0; z-index: 1000; transition: left 0.3s; } .sidebar.open { left: 0; } .mobile-menu-btn { display: block; } }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 2000; }
+        .modal-overlay.show { display: flex; }
+        .modal { background: #1a1a2e; border-radius: 20px; width: 90%; max-width: 500px; }
+        .modal-header { padding: 20px 24px; border-bottom: 1px solid #2a2a3e; display: flex; justify-content: space-between; }
+        .modal-header h3 { color: white; }
+        .modal-close { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
+        .modal-body { padding: 24px; }
+        .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid #2a2a3e; }
+        .setting-info label { color: white; font-size: 14px; font-weight: 600; display: block; margin-bottom: 4px; }
+        .setting-info p { color: #888; font-size: 12px; }
+        .settings-select { background: #2a2a3e; border: none; padding: 8px 16px; border-radius: 8px; color: white; }
+        .danger-button { background: none; border: 1px solid #e53e3e; color: #e53e3e; padding: 8px 16px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .danger-button:hover { background: #e53e3e; color: white; }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <button class="new-chat-btn" id="newChatBtn"><i class="fas fa-plus"></i> New Chat</button>
+            </div>
+            <div class="chats-history">
+                <div class="history-label"><i class="fas fa-clock"></i> Chat History</div>
+                <div class="chats-list" id="chatsList"><div class="empty-chats"><i class="fas fa-spinner fa-spin"></i> Loading...</div></div>
+            </div>
+            <div class="sidebar-footer">
+                <div class="user-section">
+                    <div class="user-avatar"><i class="fas fa-user"></i></div>
+                    <div class="user-info">
+                        <div class="user-name">{{ username }}</div>
+                        <button class="logout-link" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                    </div>
+                </div>
+                <button class="admin-link" id="adminLinkBtn" style="display: none;"><i class="fas fa-shield-alt"></i> Admin Panel</button>
+            </div>
+        </aside>
+        <main class="main">
+            <header class="chat-header">
+                <button class="mobile-menu-btn" id="mobileMenuBtn"><i class="fas fa-bars"></i></button>
+                <div><h1 class="chat-title" id="chatTitle">New Chat</h1></div>
+                <div class="header-actions">
+                    <div class="model-dropdown">
+                        <button class="model-btn" id="modelBtn"><i class="fas fa-microchip"></i> <span id="currentModelLabel">{{ current_model }}</span> <i class="fas fa-chevron-down"></i></button>
+                        <div class="model-menu" id="modelMenu">{% for model in available_models %}<div class="model-item" data-model="{{ model }}"><i class="fas fa-brain"></i><span>{{ model }}</span></div>{% endfor %}</div>
+                    </div>
+                    <button class="settings-icon-btn" id="settingsBtn"><i class="fas fa-cog"></i></button>
+                </div>
+            </header>
+            <div class="messages-container" id="messagesContainer">
+                <div class="welcome-screen" id="welcomeScreen">
+                    <div class="welcome-icon"><i class="fas fa-robot"></i></div>
+                    <h2>Welcome to AI Chat</h2>
+                    <p>Ask me anything - I'm here to help</p>
+                    <div class="example-questions">
+                        <div class="example-card" onclick="sendExample('Tell me about yourself')"><i class="fas fa-info-circle"></i><span>Tell me about yourself</span></div>
+                        <div class="example-card" onclick="sendExample('What can you do?')"><i class="fas fa-star"></i><span>What can you do?</span></div>
+                        <div class="example-card" onclick="sendExample('Help me write code')"><i class="fas fa-code"></i><span>Help me write code</span></div>
+                        <div class="example-card" onclick="sendExample('Give me advice')"><i class="fas fa-lightbulb"></i><span>Give me advice</span></div>
+                    </div>
+                </div>
+                <div class="messages-list" id="messagesList"></div>
+                <button class="scroll-to-bottom-btn" id="scrollToBottomBtn" onclick="scrollToBottom()">
+                    <i class="fas fa-arrow-down"></i>
+                </button>
+            </div>
+            <div class="input-area">
+                <div class="input-wrapper">
+                    <textarea id="messageInput" placeholder="Type a message..." rows="1"></textarea>
+                    <div id="actionButtons">
+                        <button class="send-button" id="sendBtn"><i class="fas fa-paper-plane"></i></button>
+                    </div>
+                </div>
+                <div class="input-note"><i class="fas fa-microchip"></i> AI may make mistakes</div>
+            </div>
+        </main>
+    </div>
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal">
+            <div class="modal-header"><h3><i class="fas fa-sliders-h"></i> Settings</h3><button class="modal-close" onclick="closeSettings()">&times;</button></div>
+            <div class="modal-body">
+                <div class="setting-row"><div class="setting-info"><label>Default Model</label><p>Choose AI model for new chats</p></div><select id="settingsModel" class="settings-select">{% for model in available_models %}<option value="{{ model }}">{{ model }}</option>{% endfor %}</select></div>
+                <div class="setting-row"><div class="setting-info"><label>Current Chat</label><p>Clear all messages in this chat</p></div><button class="danger-button" id="clearChatBtn"><i class="fas fa-trash-alt"></i> Clear Chat</button></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        let currentChatId = null;
+        let isStreaming = false;
+        let currentAbortController = null;
+        let currentUserMessageId = null;
+        let autoScrollEnabled = true;
+        
+        const messagesContainer = document.getElementById('messagesContainer');
+        const scrollBtn = document.getElementById('scrollToBottomBtn');
+        
+        function checkScrollPosition() {
+            const isNearBottom = messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight < 100;
+            if (isNearBottom) {
+                autoScrollEnabled = true;
+                scrollBtn.classList.remove('show');
+            } else {
+                autoScrollEnabled = false;
+                scrollBtn.classList.add('show');
+            }
+        }
+        
+        function scrollToBottom() {
+            messagesContainer.scrollTo({ top: messagesContainer.scrollHeight, behavior: 'smooth' });
+            autoScrollEnabled = true;
+            scrollBtn.classList.remove('show');
+        }
+        
+        messagesContainer.addEventListener('scroll', checkScrollPosition);
+        
+        const textarea = document.getElementById('messageInput');
+        textarea.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 150) + 'px'; });
+        
+        function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+        function formatDate(dateStr) { const date = new Date(dateStr); const now = new Date(); const diff = now - date; if (diff < 86400000) return date.toLocaleTimeString(); if (diff < 604800000) return date.toLocaleDateString('en', { weekday: 'short' }); return date.toLocaleDateString(); }
+        
+        function addMessageToUI(role, content, model = null, responseTime = null) {
+            const messagesList = document.getElementById('messagesList');
+            const welcomeScreen = document.getElementById('welcomeScreen');
+            if (welcomeScreen) welcomeScreen.style.display = 'none';
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            const avatar = role === 'user' ? '<i class="fas fa-user"></i>' : '<i class="fas fa-robot"></i>';
+            const avatarClass = role === 'user' ? 'user-avatar' : 'ai-avatar';
+            let modelInfo = '';
+            if (model && role === 'assistant') {
+                modelInfo = `<div class="message-model"><i class="fas fa-microchip"></i> ${model}${responseTime ? ` · ${responseTime}s` : ''}</div>`;
+            }
+            messageDiv.innerHTML = `<div class="message-avatar ${avatarClass}">${avatar}</div><div class="message-body"><div class="message-text">${escapeHtml(content)}</div>${modelInfo}<div class="message-time">${new Date().toLocaleTimeString()}</div></div>`;
+            messagesList.appendChild(messageDiv);
+            if (autoScrollEnabled) {
+                messageDiv.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }
+            return messageDiv;
+        }
+        
+        async function stopGeneration() {
+            if (currentUserMessageId && currentChatId) {
+                await fetch(`/api/chats/${currentChatId}/messages/stop`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ message_id: currentUserMessageId })
+                });
+            }
+            if (currentAbortController) {
+                currentAbortController.abort();
+                currentAbortController = null;
+            }
+            isStreaming = false;
+            const actionButtons = document.getElementById('actionButtons');
+            actionButtons.innerHTML = '<button class="send-button" id="sendBtn"><i class="fas fa-paper-plane"></i></button>';
+            document.getElementById('sendBtn').addEventListener('click', sendMessage);
+            
+            const streamingMsg = document.getElementById('streamingMessage');
+            if (streamingMsg) {
+                const textDiv = streamingMsg.querySelector('#streamingText');
+                const fullText = textDiv ? textDiv.innerText.replace('|', '').trim() : '';
+                if (fullText.length > 0) {
+                    const modelSpan = streamingMsg.querySelector('#streamingModel');
+                    const model = modelSpan ? modelSpan.innerText.replace('·', '').trim() : 'Unknown';
+                    streamingMsg.classList.remove('streaming');
+                    streamingMsg.removeAttribute('id');
+                    const timeSpan = streamingMsg.querySelector('#streamingTime');
+                    if (timeSpan) timeSpan.innerHTML = new Date().toLocaleTimeString();
+                    streamingMsg.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+                } else {
+                    streamingMsg.remove();
+                }
+            }
+        }
+        
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            if (!message || !currentChatId || isStreaming) return;
+            
+            input.value = '';
+            input.style.height = 'auto';
+            const userMsgDiv = addMessageToUI('user', message);
+            const userMsgId = Date.now();
+            currentUserMessageId = userMsgId;
+            
+            isStreaming = true;
+            currentAbortController = new AbortController();
+            
+            const actionButtons = document.getElementById('actionButtons');
+            actionButtons.innerHTML = '<button class="stop-button" id="stopBtn"><i class="fas fa-stop"></i></button>';
+            document.getElementById('stopBtn').addEventListener('click', stopGeneration);
+            
+            const messagesList = document.getElementById('messagesList');
+            const welcomeScreen = document.getElementById('welcomeScreen');
+            if (welcomeScreen) welcomeScreen.style.display = 'none';
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message assistant streaming';
+            messageDiv.id = 'streamingMessage';
+            messageDiv.innerHTML = `<div class="message-avatar ai-avatar"><i class="fas fa-robot"></i></div><div class="message-body"><div class="message-text" id="streamingText"></div><div class="message-model" id="streamingModel"></div><div class="message-time" id="streamingTime"></div></div>`;
+            messagesList.appendChild(messageDiv);
+            if (autoScrollEnabled) {
+                messageDiv.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }
+            
+            const selectedModel = document.querySelector('.model-item.selected')?.dataset.model || document.getElementById('currentModelLabel').textContent;
+            let fullText = '';
+            
+            try {
+                const response = await fetch(`/api/chats/${currentChatId}/messages/stream`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ message: message, model: selectedModel }),
+                    signal: currentAbortController.signal
+                });
+                
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+                    
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const data = JSON.parse(line.slice(6));
+                                if (data.chunk) {
+                                    fullText += data.chunk;
+                                    const textDiv = document.getElementById('streamingText');
+                                    if (textDiv) {
+                                        textDiv.innerHTML = escapeHtml(fullText) + '<span class="cursor-blink"></span>';
+                                        if (autoScrollEnabled) {
+                                            messageDiv.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                                        }
+                                    }
+                                }
+                                if (data.done && fullText.length > 0) {
+                                    const textDiv = document.getElementById('streamingText');
+                                    if (textDiv) {
+                                        textDiv.innerHTML = escapeHtml(fullText);
+                                    }
+                                    const modelSpan = document.getElementById('streamingModel');
+                                    if (modelSpan) {
+                                        modelSpan.innerHTML = `<i class="fas fa-microchip"></i> ${selectedModel}${data.response_time ? ` · ${data.response_time}s` : ''}`;
+                                    }
+                                    const timeSpan = document.getElementById('streamingTime');
+                                    if (timeSpan) {
+                                        timeSpan.innerHTML = new Date().toLocaleTimeString();
+                                    }
+                                    messageDiv.classList.remove('streaming');
+                                    messageDiv.removeAttribute('id');
+                                    if (autoScrollEnabled) {
+                                        scrollToBottom();
+                                    }
+                                    loadChats();
+                                }
+                            } catch (e) {}
+                        }
+                    }
+                }
+                
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    console.log('Stream aborted - partial response saved');
+                    if (fullText.length > 0) {
+                        const textDiv = document.getElementById('streamingText');
+                        if (textDiv) {
+                            textDiv.innerHTML = escapeHtml(fullText);
+                        }
+                        const modelSpan = document.getElementById('streamingModel');
+                        if (modelSpan) {
+                            modelSpan.innerHTML = `<i class="fas fa-microchip"></i> ${selectedModel}`;
+                        }
+                        const timeSpan = document.getElementById('streamingTime');
+                        if (timeSpan) {
+                            timeSpan.innerHTML = new Date().toLocaleTimeString();
+                        }
+                        messageDiv.classList.remove('streaming');
+                        messageDiv.removeAttribute('id');
+                        loadChats();
+                    }
+                } else {
+                    console.error('Stream error:', error);
+                    const textDiv = document.getElementById('streamingText');
+                    if (textDiv) {
+                        textDiv.innerHTML = 'Sorry, an error occurred. Please try again.';
+                    }
+                }
+            } finally {
+                isStreaming = false;
+                currentAbortController = null;
+                currentUserMessageId = null;
+                actionButtons.innerHTML = '<button class="send-button" id="sendBtn"><i class="fas fa-paper-plane"></i></button>';
+                document.getElementById('sendBtn').addEventListener('click', sendMessage);
+            }
+        }
+        
+        async function loadChats() {
+            try {
+                const response = await fetch('/api/chats');
+                const data = await response.json();
+                const chatsList = document.getElementById('chatsList');
+                if (data.chats.length === 0) { 
+                    chatsList.innerHTML = '<div class="empty-chats"><i class="fas fa-comments"></i><p>No chats</p><small>Click "New Chat"</small></div>';
+                    currentChatId = null;
+                    document.getElementById('chatTitle').textContent = 'New Chat';
+                    return;
+                }
+                chatsList.innerHTML = data.chats.map(chat => `<div class="chat-item ${chat.id === currentChatId ? 'active' : ''}" onclick="switchChat(${chat.id})"><i class="fas fa-message"></i><div class="chat-details"><div class="chat-name">${escapeHtml(chat.title)}</div><div class="chat-date">${formatDate(chat.updated_at)}</div></div><div class="chat-actions"><button class="chat-edit" onclick="event.stopPropagation(); editChat(${chat.id}, '${escapeHtml(chat.title)}')"><i class="fas fa-pencil-alt"></i></button><button class="chat-delete" onclick="event.stopPropagation(); deleteChat(${chat.id})"><i class="fas fa-trash-alt"></i></button></div></div>`).join('');
+                
+                if (!currentChatId && data.chats.length > 0) {
+                    switchChat(data.chats[0].id);
+                }
+            } catch (error) { console.error('Error loading chats:', error); }
+        }
+        
+        async function switchChat(chatId) {
+            if (isStreaming) { await stopGeneration(); await new Promise(r => setTimeout(r, 500)); }
+            currentChatId = chatId;
+            document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
+            document.querySelector(`.chat-item[onclick="switchChat(${chatId})"]`)?.classList.add('active');
+            try {
+                const response = await fetch(`/api/chats/${chatId}/messages`);
+                const data = await response.json();
+                const messagesList = document.getElementById('messagesList');
+                const welcomeScreen = document.getElementById('welcomeScreen');
+                if (data.messages.length === 0) { messagesList.innerHTML = ''; welcomeScreen.style.display = 'flex'; }
+                else { welcomeScreen.style.display = 'none'; messagesList.innerHTML = data.messages.map(msg => `<div class="message ${msg.role}"><div class="message-avatar ${msg.role === 'user' ? 'user-avatar' : 'ai-avatar'}"><i class="fas ${msg.role === 'user' ? 'fa-user' : 'fa-robot'}"></i></div><div class="message-body"><div class="message-text">${escapeHtml(msg.content)}</div>${msg.model_used ? `<div class="message-model"><i class="fas fa-microchip"></i> ${msg.model_used}</div>` : ''}<div class="message-time">${new Date(msg.timestamp).toLocaleTimeString()}</div></div></div>`).join(''); }
+                const chat = data.chats?.find(c => c.id === chatId);
+                if (chat) {
+                    document.getElementById('chatTitle').textContent = chat.title;
+                    const currentModel = chat.model_used;
+                    document.getElementById('currentModelLabel').textContent = currentModel;
+                    document.querySelectorAll('.model-item').forEach(item => {
+                        if (item.dataset.model === currentModel) {
+                            document.querySelectorAll('.model-item').forEach(i => i.classList.remove('selected'));
+                            item.classList.add('selected');
+                        }
+                    });
+                }
+                scrollToBottom();
+            } catch (error) { console.error('Error loading messages:', error); }
+        }
+        
+        async function createNewChat() {
+            if (isStreaming) { await stopGeneration(); await new Promise(r => setTimeout(r, 500)); }
+            try {
+                const selectedModel = document.querySelector('.model-item.selected')?.dataset.model || document.getElementById('currentModelLabel').textContent;
+                const response = await fetch('/api/chats', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ title: 'New Chat', model: selectedModel }) });
+                const data = await response.json();
+                currentChatId = data.chat.id;
+                document.getElementById('chatTitle').textContent = 'New Chat';
+                document.getElementById('messagesList').innerHTML = '';
+                document.getElementById('welcomeScreen').style.display = 'flex';
+                loadChats();
+                if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('open');
+            } catch (error) { console.error('Error creating chat:', error); }
+        }
+        
+        async function deleteChat(chatId) {
+            if (isStreaming) { await stopGeneration(); await new Promise(r => setTimeout(r, 500)); }
+            if (!confirm('Delete this chat?')) return;
+            try {
+                await fetch(`/api/chats/${chatId}`, { method: 'DELETE' });
+                if (currentChatId === chatId) {
+                    currentChatId = null;
+                    document.getElementById('chatTitle').textContent = 'New Chat';
+                    document.getElementById('messagesList').innerHTML = '';
+                    document.getElementById('welcomeScreen').style.display = 'flex';
+                }
+                loadChats();
+            } catch (error) { console.error('Error deleting chat:', error); }
+        }
+        
+        async function editChat(chatId, currentTitle) {
+            if (isStreaming) return;
+            const newTitle = prompt('Chat name:', currentTitle);
+            if (!newTitle || newTitle === currentTitle) return;
+            try {
+                await fetch(`/api/chats/${chatId}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ title: newTitle }) });
+                if (currentChatId === chatId) document.getElementById('chatTitle').textContent = newTitle;
+                loadChats();
+            } catch (error) { console.error('Error editing chat:', error); }
+        }
+        
+        async function clearCurrentChatMessages() {
+            if (isStreaming) return;
+            if (!currentChatId) return;
+            if (!confirm('Clear all messages in this chat?')) return;
+            try {
+                await fetch(`/api/chats/${currentChatId}/messages`, { method: 'DELETE' });
+                document.getElementById('messagesList').innerHTML = '';
+                document.getElementById('welcomeScreen').style.display = 'flex';
+            } catch (error) { console.error('Error clearing messages:', error); }
+        }
+        
+        function sendExample(question) {
+            if (isStreaming) return;
+            document.getElementById('messageInput').value = question;
+            sendMessage();
+        }
+        
+        document.querySelectorAll('.model-item').forEach(item => {
+            item.addEventListener('click', async function() {
+                if (isStreaming) {
+                    alert('Please wait for current response to complete');
+                    return;
+                }
+                const model = this.dataset.model;
+                document.querySelectorAll('.model-item').forEach(i => i.classList.remove('selected'));
+                this.classList.add('selected');
+                document.getElementById('currentModelLabel').textContent = model;
+                document.getElementById('settingsModel').value = model;
+                if (currentChatId) {
+                    await fetch(`/api/chats/${currentChatId}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ model_used: model }) });
+                }
+                document.getElementById('modelMenu').classList.remove('show');
+            });
+        });
+        
+        document.getElementById('modelBtn').addEventListener('click', () => { document.getElementById('modelMenu').classList.toggle('show'); });
+        document.addEventListener('click', (e) => { if (!e.target.closest('.model-dropdown')) document.getElementById('modelMenu').classList.remove('show'); });
+        document.getElementById('messageInput').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !isStreaming) { e.preventDefault(); sendMessage(); } });
+        document.getElementById('newChatBtn').addEventListener('click', createNewChat);
+        document.getElementById('mobileMenuBtn').addEventListener('click', () => { document.getElementById('sidebar').classList.toggle('open'); });
+        document.getElementById('logoutBtn').addEventListener('click', async () => { await fetch('/api/logout', { method: 'POST' }); window.location.href = '/login'; });
+        document.getElementById('settingsBtn').addEventListener('click', () => { document.getElementById('settingsModal').classList.add('show'); });
+        document.getElementById('clearChatBtn').addEventListener('click', clearCurrentChatMessages);
+        document.getElementById('settingsModel').addEventListener('change', async function() {
+            const model = this.value;
+            document.querySelectorAll('.model-item').forEach(item => {
+                if (item.dataset.model === model) {
+                    item.click();
+                }
+            });
+        });
+        
+        async function checkAdmin() {
+            try {
+                const res = await fetch('/api/admin/users');
+                if (res.ok) {
+                    document.getElementById('adminLinkBtn').style.display = 'flex';
+                    document.getElementById('adminLinkBtn').onclick = () => { window.location.href = '/admin'; };
+                }
+            } catch(e) {}
+        }
+        
+        function closeSettings() { document.getElementById('settingsModal').classList.remove('show'); }
+        document.querySelector('.modal-close').addEventListener('click', closeSettings);
+        document.getElementById('settingsModal').addEventListener('click', (e) => { if (e.target === document.getElementById('settingsModal')) closeSettings(); });
+        
+        loadChats();
+        checkAdmin();
+    </script>
+</body>
+</html>
+<script>
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+
+function renderChatsRange(start, end) {
+    const allChats = window.allChats || [];
+    const visibleChats = allChats.slice(start, end);
+    const container = document.getElementById('chatsList');
+    
+}
+
+
+const searchChats = debounce(async (query) => {
+    if (query.length < 2) {
+        loadChats();
+        return;
+    }
+    const response = await fetch(`/api/chats/search?q=${encodeURIComponent(query)}`);
+    const data = await response.json();
+    renderChatsList(data.chats);
+}, 300);
+
+
+const searchHtml = '<input type="text" id="searchChats" placeholder="Search chats..." style="width:100%; padding:8px; margin-bottom:10px; border-radius:8px; border:none;">';
+document.querySelector('.chats-history').insertAdjacentHTML('afterbegin', searchHtml);
+document.getElementById('searchChats').addEventListener('input', (e) => searchChats(e.target.value));
+</script>
