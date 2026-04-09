@@ -1,105 +1,45 @@
-```bash
+```markdown
 # AI Чат Система
 
-Веб-приложение для общения с искусственным интеллектом через Ollama API. Пользователи могут создавать несколько чатов, переключать модели AI, получать ответы в реальном времени (стриминг), а администратор может просматривать всех пользователей и их чаты.
-
----
+Веб-приложение для общения с ИИ через Ollama API.
 
 ## Документация и диаграммы
 
-В папке `docs/` находятся диаграммы, созданные для отчетности по практике:
+В папке `docs/` находятся диаграммы:
 
-### Диаграммы UML
-
-| Файл | Описание |
-|------|----------|
-| `User Chat Management Model.pdf` | Диаграмма классов UML. Показывает структуру системы: классы User, Chat, Message, ModelStats, UserSession, OllamaClient, ChatController и связи между ними (один-ко-многим). |
-| `User Interaction Stream.pdf` | Диаграмма последовательности (Sequence Diagram). Отображает процесс отправки сообщения: от ввода пользователем до получения стримингового ответа от AI, включая взаимодействие с БД и Ollama API. |
-| `AI Chat System User.pdf` | Диаграмма вариантов использования (Use Case Diagram). Описывает функциональность системы с точки зрения пользователя и администратора: регистрация, создание чатов, отправка сообщений, управление моделями и администрирование. |
-
-### Где находятся диаграммы
-
-```
-ai_chat_app/
-└── docs/
-    ├── User Chat Management Model.pdf
-    ├── User Interaction Stream.pdf
-    └── AI Chat System User.pdf
-```
-
-### Главный экран чата
-
-- Левая панель: список чатов, кнопка "New Chat", информация о пользователе
-- Центральная область: диалог с AI, приветственный экран
-- Правая верхняя панель: выбор модели AI, настройки
-
-### Админ-панель
-
-- Список всех пользователей слева
-- При выборе пользователя показываются его чаты
-- При выборе чата показываются все сообщения
-
----
+- `User Chat Management Model.pdf` — Диаграмма классов
+- `User Interaction Stream.pdf` — Диаграмма последовательности  
+- `AI Chat System User.pdf` — Use Case диаграмма
 
 ## Функциональность
 
-### Пользовательские функции
+**Пользователь:**
+- Регистрация и вход
+- Создание/переименование/удаление чатов
+- Отправка сообщений (стриминг ответов)
+- Переключение AI моделей
+- Остановка генерации
+- История сообщений
 
-| Функция | Описание |
-|---------|----------|
-| Регистрация | Создание аккаунта |
-| Вход/Выход | Авторизация |
-| Создание чата | Новая беседа |
-| Переименование | Изменение названия |
-| Удаление | Удаление чата |
-| Сообщения | Отправка сообщений |
-| Стриминг | Ответ в реальном времени |
-| Stop | Остановка генерации |
-| Модели | Выбор AI |
-| История | Сохранение сообщений |
-| Очистка | Очистка чата |
-
-### Административные функции
-
-| Функция | Описание |
-|---------|----------|
-| Пользователи | Просмотр всех |
-| Чаты | Просмотр чатов |
-| Сообщения | Просмотр сообщений |
-
----
+**Администратор:**
+- Просмотр всех пользователей
+- Просмотр их чатов и сообщений
 
 ## Технологии
 
-- Python 3.11+
-- Flask 2.3.3
-- PostgreSQL 15+
-- SQLAlchemy
-- Ollama
-- HTML/CSS/JS
-
----
+Python / Flask / PostgreSQL / SQLAlchemy / Ollama / HTML/CSS/JS
 
 ## Установка
 
-### Требования
-
-- Python 3.11+
-- PostgreSQL
-- Ollama (обязательно установлен и запущен)
-
 ### 1. PostgreSQL
 
-**Arch Linux:**
 ```bash
+# Arch
 sudo pacman -S postgresql
 sudo -u postgres initdb -D /var/lib/postgres/data
 sudo systemctl enable --now postgresql
-```
 
-**Ubuntu/Debian:**
-```bash
-sudo apt update
+# Ubuntu
 sudo apt install postgresql postgresql-contrib
 sudo systemctl enable --now postgresql
 ```
@@ -112,41 +52,37 @@ sudo -u postgres psql -c "CREATE USER postgres WITH PASSWORD 'postgres';"
 sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE ai_chat_db TO postgres;"
 ```
 
-### 3.1 Установка проекта
+### 3. Проект
 
 ```bash
 git clone https://github.com/your-repo/ai_chat_app.git
 cd ai_chat_app
-
 python -m venv venv
 source venv/bin/activate
-
 pip install -r requirements.txt
 ```
 
-### 3.2 Установка Ollama
+### 4. Ollama
 
 ```bash
 curl -fsSL https://ollama.com/install.sh | sh
 ollama run llama2
 ```
 
-### 4. .env
+### 5. .env
 
 ```env
 SECRET_KEY=your-secret-key
-
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=ai_chat_db
 DB_USER=postgres
 DB_PASSWORD=postgres
-
 OLLAMA_HOST=127.0.0.1
 OLLAMA_PORT=11434
 ```
 
-### 5. Запуск
+### 6. Запуск
 
 ```bash
 python app.py
@@ -154,51 +90,20 @@ python app.py
 
 Открыть: http://localhost:5000
 
----
-
-## Структура проекта
-
-```
-ai_chat_app/
-├── app.py
-├── config.py
-├── database.py
-├── ollama_client.py
-├── decorators.py
-├── utils.py
-├── requirements.txt
-├── .env
-├── templates/
-├── static/
-├── docs/
-└── tests/
-```
-
----
-
 ## API
 
-### Auth
-- POST /api/register
-- POST /api/login
-- POST /api/logout
-
-### Chats
-- GET /api/chats
-- POST /api/chats
-- DELETE /api/chats/{id}
-
-### Messages
-- GET /api/chats/{id}/messages
-- POST /api/chats/{id}/messages/stream
-
-### Models
-- GET /api/models
-
-### Admin
-- GET /api/admin/users
-
----
+| Метод | Эндпоинт | Описание |
+|-------|----------|----------|
+| POST | /api/register | Регистрация |
+| POST | /api/login | Вход |
+| POST | /api/logout | Выход |
+| GET | /api/chats | Список чатов |
+| POST | /api/chats | Создать чат |
+| DELETE | /api/chats/{id} | Удалить чат |
+| GET | /api/chats/{id}/messages | История |
+| POST | /api/chats/{id}/messages/stream | Отправить |
+| GET | /api/models | Список моделей |
+| GET | /api/admin/users | Пользователи (админ) |
 
 ## Тесты
 
@@ -206,37 +111,24 @@ ai_chat_app/
 python tests/test_app.py
 ```
 
----
-
 ## Админ
 
-- login: admin
-- password: admin123
-
----
+- Логин: `admin`
+- Пароль: `admin123`
 
 ## Устранение проблем
 
-### PostgreSQL
 ```bash
+# PostgreSQL
 sudo systemctl status postgresql
-```
 
-### Ollama
-```bash
+# Ollama
 curl http://127.0.0.1:11434/api/tags
-```
 
-### Порт занят
-```bash
+# Порт занят
 lsof -i :5000
 kill -9 <PID>
 ```
 
----
 
-## Лицензия
-
-Учебный проект
-
-
+```
