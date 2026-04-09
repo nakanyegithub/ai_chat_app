@@ -24,10 +24,10 @@
 
 ### Где находятся диаграммы
 ai_chat_app/
-└── docs/
-├── User Chat Management Model.pdf # Диаграмма классов
-├── User Interaction Stream.pdf # Диаграмма последовательности
-└── AI Chat System User.pdf # Use Case диаграмма
+  └── docs/
+    ├── User Chat Management Model.pdf # Диаграмма классов
+    ├── User Interaction Stream.pdf # Диаграмма последовательности
+    └── AI Chat System User.pdf # Use Case диаграмма
 ### Главный экран чата
 
 * Левая панель: список чатов, кнопка "New Chat", информация о пользователе
